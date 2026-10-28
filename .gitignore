@@ -1,0 +1,25 @@
+# Local radio captures can identify you and nearby devices.
+*.jsonl
+*.stderr
+*.log
+*.btsnoop
+*.pcap
+*.pcapng
+*-scan.txt
+
+# Local configuration and credentials.
+.env
+.env.*
+!.env.example
+/configuration.yaml
+/secrets.yaml
+/known_devices.yaml
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Generated files and macOS metadata.
+__pycache__/
+*.py[cod]
+.DS_Store

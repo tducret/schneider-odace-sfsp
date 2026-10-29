@@ -222,10 +222,37 @@ actions:
 mode: single
 ```
 
+### Command latency
+
+The integration reuses the Bluetooth connection for **30 seconds after the last
+command**, avoiding connection setup for subsequent commands. HA's state is
+updated as soon as the receiver acknowledges the write, without waiting for
+disconnection. The first command after startup or an idle disconnect still needs
+to establish a Bluetooth connection; this change does not eliminate that delay.
+
+Optionally adjust the idle timeout in your existing switch configuration:
+
+```yaml
+switch:
+  - platform: odace_sfsp
+    name: "Odace light"
+    address: "AA:BB:CC:DD:EE:FF"
+    connection_timeout: 30
+```
+
+`connection_timeout` is in seconds, from `0` to `300`. Larger values keep repeated
+commands fast for longer, but may delay physical-switch state feedback if the
+receiver stops advertising while connected. `0` disconnects after every command.
+Connections are also released when HA stops or the entity is removed.
+
+To update an existing installation, replace the four integration files in
+`/config/custom_components/odace_sfsp/` and restart Home Assistant. No new YAML
+setting or re-pairing is required.
+
 ## State feedback and limitations
 
-- Each command opens a BLE connection, writes on/off, then disconnects. The
-  receiver must remain powered and within range of the Pi.
+- Commands write on/off over a shared BLE connection, released after the idle
+  timeout. The receiver must remain powered and within range of the Pi.
 - After an acknowledged write, the entity initially shows the requested state.
   It then reconciles state from receiver advertisements, including changes made
   by the physical switch. A write acknowledgement is not independently measured
@@ -239,7 +266,8 @@ mode: single
 - This version supports on/off, not dimming, timer configuration, or pairing
   through the HA UI.
 - Direct on/off control and Pi pairing were verified on the actual receiver.
-  Protocol unit tests pass, but the custom platform itself has not yet been
+  Protocol and mocked connection-lifecycle tests pass, but these latency changes
+  have not yet been measured on a live receiver. The platform has not been
   verified inside a running Home Assistant instance. Other models and firmware
   versions may behave differently.
 
@@ -328,7 +356,8 @@ actions.
 
 ## Development and capture tools
 
-Run the protocol tests locally:
+Run the protocol and connection-lifecycle tests locally (no HA installation or
+Bluetooth hardware required):
 
 ```sh
 python3 -m unittest discover -s tests -v
